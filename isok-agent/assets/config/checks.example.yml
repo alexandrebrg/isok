@@ -1,0 +1,15 @@
+checks:
+  - type: "http"
+    id: "id1"
+    pretty_name: "60s endpoint check"
+    endpoint: "https://my_endpoint/api/v1/healthy?system_only=true"
+    interval: 60
+    headers:
+      Authorization: "Bearer..."
+
+  - type: "tcp"
+    id: "id2"
+    pretty_name: "120s redis tcp check"
+    endpoint: "my_tcp_endpoint:9123"
+    secured: true
+    interval: 120

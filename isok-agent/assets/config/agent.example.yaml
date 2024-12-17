@@ -1,0 +1,17 @@
+main_broker: "http://broker-eu-fr-par1"
+fallback_brokers:
+  - "http://broker-eu-uk-lon1"
+  - "http://fallback_2"
+
+# Must be sent with every message
+zone: ""
+region: ""
+
+# Max number of message that can be buffered, if full, send to broker
+batch: 100
+# Maximum interval to which we send a batch
+batch_interval: 10
+
+check_config_adapter:
+  name: "file"
+  path: "/home/noa/Documents/Travail/Clever/isok/isok-agent/assets/config/checks.example.yml"

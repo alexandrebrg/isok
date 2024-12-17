@@ -1,13 +1,13 @@
 [package]
-name = "isok"
+name = "isok-data"
 version = "0.1.0"
 edition = "2021"
 
-[workspace]
-members = ["isok-agent", "isok-data"]
-
-
 [dependencies]
+prost = "0.13.4"
+prost-types = "0.13.4"
 
 [build-dependencies]
+prost-types = "0.13.4"
 prost-build = "0.13.4"
+prost = "0.13.4"

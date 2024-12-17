@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package isok.broker.response;
+
+message Response {
+  ResponseStatus status = 1;
+  optional string reason = 2;
+}
+
+// Broker response status
+enum ResponseStatus {
+  Ok = 0;
+  Ko = 1;
+}

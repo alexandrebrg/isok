@@ -1,0 +1,14 @@
+[package]
+name = "isok-agent"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+isok-data = { path = "../isok-data" }
+async-trait = "0.1.83"
+surf = "2.3.2"
+tokio = { version = "1.42.0", features = ["rt-multi-thread", "macros", "sync", "time"] }
+serde = { version = "1.0.216", features = ["derive"] }
+figment = { version = "0.10.19", features = ["yaml"] }
+serde_yaml = "0.9.33"
+thiserror = "2.0.7"
