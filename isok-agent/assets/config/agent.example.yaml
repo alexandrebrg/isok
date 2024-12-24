@@ -1,11 +1,10 @@
-main_broker: "http://broker-eu-fr-par1"
+# Target broker configuration, we'd recommend to have at least one fallback broker.
+main_broker: "http://broker.eu-fr-par1.localhost"
 fallback_brokers:
-  - "http://broker-eu-uk-lon1"
-  - "http://fallback_2"
+  - "http://broker.us-east-ny1.localhost"
 
-# Must be sent with every message
-zone: ""
-region: ""
+zone: "dev"
+region: "localhost"
 
 # Max number of message that can be buffered, if full, send to broker
 batch: 100
@@ -13,5 +12,19 @@ batch: 100
 batch_interval: 10
 
 check_config_adapter:
-  name: "file"
-  path: "/home/noa/Documents/Travail/Clever/isok/isok-agent/assets/config/checks.example.yml"
+  name: "static"
+  checks:
+    - type: "http"
+      id: "id1"
+      pretty_name: "60s endpoint check"
+      endpoint: "https://my_endpoint/api/v1/healthy?system_only=true"
+      interval: 60
+      headers:
+        Authorization: "Bearer..."
+
+    - type: "tcp"
+      id: "id2"
+      pretty_name: "120s redis tcp check"
+      endpoint: "my_tcp_endpoint:9123"
+      secured: true
+      interval: 120
