@@ -1,10 +1,16 @@
-use crate::jobs::Execute;
+use crate::jobs::{Execute, JobError};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
+use std::net::SocketAddr;
+use std::str::FromStr;
 use std::time::Duration;
+use tokio::net::TcpStream;
 use tokio::sync::mpsc::UnboundedSender;
+use isok_data::CheckJobStatus;
+use crate::batch_sender::JobResult;
+use crate::registry::JobRegistry;
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
 pub struct TcpJob {
     endpoint: String,
     interval: u64,
@@ -25,9 +31,31 @@ impl TcpJob {
 
 #[async_trait::async_trait]
 impl Execute for TcpJob {
-    async fn execute(&self, tx: UnboundedSender<String>) -> Result<(), Box<dyn Error>> {
-        tx.send(format!("tcp: {}", self.endpoint.clone()))?;
+    async fn execute(&self, tx: UnboundedSender<JobResult>) -> Result<(), JobError> {
+        let mut msg = JobResult::new(self.pretty_name.clone());
+
+        let addr = SocketAddr::from_str(&self.endpoint);
+        if let Ok(addr) = addr {
+            match TcpStream::connect(addr).await {
+                Ok(_) => {
+                    msg.set_status(CheckJobStatus::Reachable);
+                }
+                Err(_) => {
+                    msg.set_status(CheckJobStatus::Unreachable);
+                }
+            }
+        } else {
+            msg.set_status(CheckJobStatus::Unreachable);
+        }
+
+        if let Err(e) = tx.send(msg) {
+            tracing::error!("Unable to send message to channel {}", e);
+        }
         Ok(())
+    }
+
+    fn pretty_name(&self) -> String {
+        self.pretty_name.clone()
     }
 
     fn interval(&self) -> Duration {

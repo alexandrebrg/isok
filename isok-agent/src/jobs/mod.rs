@@ -4,11 +4,13 @@ use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::time::Duration;
 use tokio::sync::mpsc::UnboundedSender;
+use crate::batch_sender::JobResult;
+use crate::registry::JobRegistry;
 
 mod http;
 mod tcp;
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
 #[serde(tag = "type")]
 pub enum Job {
     #[serde(rename = "tcp")]
@@ -17,12 +19,28 @@ pub enum Job {
     Http(HttpJob),
 }
 
+#[derive(Debug, thiserror::Error)]
+pub enum JobError {
+    #[error("Invalid job config {0}")]
+    InvalidJobConfig(String),
+    #[error("Unable to execute job {0}")]
+    HttpError(#[from] reqwest::Error),
+}
+
+
 #[async_trait::async_trait]
 impl Execute for Job {
-    async fn execute(&self, tx: UnboundedSender<String>) -> Result<(), Box<dyn Error>> {
+    async fn execute(&self, tx: UnboundedSender<JobResult>) -> Result<(), JobError> {
         match self {
             Job::Tcp(job) => job.execute(tx).await,
             Job::Http(job) => job.execute(tx).await,
+        }
+    }
+
+    fn pretty_name(&self) -> String {
+        match self {
+            Job::Tcp(job) => job.pretty_name(),
+            Job::Http(job) => job.pretty_name(),
         }
     }
 
@@ -36,7 +54,8 @@ impl Execute for Job {
 
 #[async_trait::async_trait]
 pub trait Execute {
-    async fn execute(&self, tx: UnboundedSender<String>) -> Result<(), Box<dyn Error>>;
+    async fn execute(&self, tx: UnboundedSender<JobResult>) -> Result<(), JobError>;
+    fn pretty_name(&self) -> String;
     fn interval(&self) -> Duration;
 }
 

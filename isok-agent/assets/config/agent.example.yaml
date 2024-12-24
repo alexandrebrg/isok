@@ -15,16 +15,23 @@ check_config_adapter:
   name: "static"
   checks:
     - type: "http"
+      id: "id2"
+      pretty_name: "6s google"
+      endpoint: "https://google.com"
+      interval: 6
+      headers:
+        Authorization: "Bearer..."
+    - type: "http"
       id: "id1"
-      pretty_name: "60s endpoint check"
-      endpoint: "https://my_endpoint/api/v1/healthy?system_only=true"
-      interval: 60
+      pretty_name: "5s failing endpoint"
+      endpoint: "https://my_endpoint.com/api/v1/healthy?system_only=true"
+      interval: 5
       headers:
         Authorization: "Bearer..."
 
     - type: "tcp"
       id: "id2"
-      pretty_name: "120s redis tcp check"
+      pretty_name: "10s redis tcp check"
       endpoint: "my_tcp_endpoint:9123"
-      secured: true
-      interval: 120
+      secured: false
+      interval: 10

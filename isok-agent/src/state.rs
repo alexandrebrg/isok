@@ -1,24 +1,33 @@
-use crate::jobs::Job;
+use crate::jobs::{Execute, Job};
 use std::ops::Deref;
 use std::time::Duration;
+use tokio::time::Instant;
 
 // Own a job and it's last execution
 #[derive(Debug)]
 pub struct JobState {
-    last_run: Option<Duration>,
     job: Job,
+    next_run: Instant,
 }
 
 impl JobState {
     pub(crate) fn new(job: Job) -> JobState {
         JobState {
-            last_run: None,
+            next_run: Instant::now(),
             job,
         }
     }
 
-    pub fn last_run(&self) -> Option<Duration> {
-        self.last_run
+    pub fn next_run(&self) -> Instant {
+        self.next_run
+    }
+
+    pub fn interval(&self) -> Duration {
+        self.job.interval()
+    }
+
+    pub fn set_next_run(&mut self, current_time: Instant) {
+        self.next_run = current_time + self.interval();
     }
 }
 

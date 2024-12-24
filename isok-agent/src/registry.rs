@@ -4,19 +4,17 @@ use crate::state::JobState;
 use figment::providers::{Format, Yaml};
 use figment::Figment;
 use serde::Deserialize;
-use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::time::Duration;
-use surf::http::Method;
-use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
+use dashmap::DashMap;
+use tokio::sync::mpsc::{UnboundedSender};
 use tokio::sync::RwLock;
+use tokio::time::Instant;
+use isok_data::JobPrettyName;
+use crate::batch_sender::JobResult;
 
-#[derive(Debug)]
 pub struct JobRegistry {
-    inner: BTreeMap<u64, JobState>,
-    last_id: u64,
-    tx: UnboundedSender<String>,
-    rx: RwLock<UnboundedReceiver<String>>,
+    jobs: DashMap<JobPrettyName, JobState>,
 }
 
 impl JobRegistry {
@@ -38,45 +36,44 @@ impl JobRegistry {
 
         Ok(registry)
     }
+
+    pub fn from_static_config(jobs: Vec<Job>) -> Result<JobRegistry> {
+        let mut registry = JobRegistry::new();
+
+        for job in jobs {
+            registry.append(job);
+        }
+
+        Ok(registry)
+    }
 }
 
 impl JobRegistry {
     pub(crate) fn new() -> JobRegistry {
-        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
         JobRegistry {
-            inner: Default::default(),
-            last_id: 0,
-            tx,
-            rx: RwLock::new(rx),
+            jobs: Default::default(),
         }
     }
 
     fn append(&mut self, job: Job) {
-        self.inner.insert(self.last_id, JobState::new(job));
-        self.last_id += 1;
+        self.jobs.insert(JobPrettyName::new(job.pretty_name()), JobState::new(job));
     }
 
-    pub(crate) async fn execute(&self) {
+    pub(crate) async fn execute(&self, tx: UnboundedSender<JobResult>) {
         loop {
-            let tx = self.tx.clone();
-            for (&_id, job) in &self.inner {
-                if let Some(last_run) = job.last_run() {
-                    // todo: cool down job
-                } else {
-                    job.execute(tx.clone()).await.unwrap();
-                }
-                tokio::time::sleep(Duration::from_secs(1)).await;
-            }
-        }
-    }
+            let current_time = Instant::now();
 
-    pub(crate) async fn run(&self) {
-        while let Some(x) = self.rx.write().await.recv().await {
-            surf::client()
-                .request(Method::Get, format!("http://localhost:8000/{}", x))
-                .send()
-                .await
-                .unwrap();
+            for mut job in self.jobs.iter_mut() {
+                if job.next_run() > current_time {
+                    continue;
+                }
+                let next_interval = current_time + job.interval();
+
+                tracing::debug!(job_name = ?job.key(), "Job execution");
+                job.set_next_run(next_interval);
+                job.execute(tx.clone()).await.unwrap();
+            }
+            tokio::time::sleep(Duration::from_millis(100)).await;
         }
     }
 }

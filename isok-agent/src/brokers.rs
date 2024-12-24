@@ -1,4 +1,4 @@
-use isok_data::Event;
+use isok_data::CheckResult;
 use tokio::sync::RwLock;
 
 enum Broker {
@@ -8,7 +8,7 @@ enum Broker {
 
 #[async_trait::async_trait]
 impl SendEvents for Broker {
-    async fn send_events(&self, event: Event) -> crate::Result<()> {
+    async fn send_events(&self, event: CheckResult) -> crate::Result<()> {
         match self {
             Broker::Grpc => Ok(()),
             Broker::Dev(broker) => broker.send_events(event).await,
@@ -18,16 +18,16 @@ impl SendEvents for Broker {
 
 #[async_trait::async_trait]
 trait SendEvents {
-    async fn send_events(&self, event: Event) -> crate::Result<()>;
+    async fn send_events(&self, event: CheckResult) -> crate::Result<()>;
 }
 
 struct DevBroker {
-    events: RwLock<Vec<Event>>,
+    events: RwLock<Vec<CheckResult>>,
 }
 
 #[async_trait::async_trait]
 impl SendEvents for DevBroker {
-    async fn send_events(&self, event: Event) -> crate::Result<()> {
+    async fn send_events(&self, event: CheckResult) -> crate::Result<()> {
         self.events.write().await.push(event);
 
         Ok(())

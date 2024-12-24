@@ -1,11 +1,12 @@
-use crate::jobs::Execute;
+use crate::jobs::{Execute, JobError};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::error::Error;
 use std::time::Duration;
 use tokio::sync::mpsc::UnboundedSender;
+use isok_data::{CheckJobStatus, CheckResult};
+use crate::batch_sender::JobResult;
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
 pub struct HttpJob {
     endpoint: String,
     pretty_name: String,
@@ -26,9 +27,26 @@ impl HttpJob {
 
 #[async_trait::async_trait]
 impl Execute for HttpJob {
-    async fn execute(&self, tx: UnboundedSender<String>) -> Result<(), Box<dyn Error>> {
-        tx.send(format!("http: {}", self.endpoint.clone()))?;
+    async fn execute(&self, tx: UnboundedSender<JobResult>) -> Result<(), JobError> {
+        let mut msg = JobResult::new(self.pretty_name.clone());
+        let client = reqwest::Client::new();
+        match client.get(&self.endpoint).send().await {
+            Ok(response) => {
+                let status = response.status();
+                msg.set_status(CheckJobStatus::Reachable);
+            }
+            Err(e) => {
+                msg.set_status(CheckJobStatus::Unreachable);
+            }
+        }
+        if let Err(e) = tx.send(msg) {
+            tracing::error!("Unable to send message to channel {}", e);
+        }
         Ok(())
+    }
+
+    fn pretty_name(&self) -> String {
+        self.pretty_name.clone()
     }
 
     fn interval(&self) -> Duration {
