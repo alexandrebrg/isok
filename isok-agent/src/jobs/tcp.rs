@@ -1,6 +1,5 @@
 use crate::jobs::{Execute, JobError};
 use serde::{Deserialize, Serialize};
-use std::error::Error;
 use std::net::SocketAddr;
 use std::str::FromStr;
 use std::time::Duration;
@@ -8,7 +7,6 @@ use tokio::net::TcpStream;
 use tokio::sync::mpsc::UnboundedSender;
 use isok_data::broker_rpc::CheckJobStatus;
 use crate::batch_sender::JobResult;
-use crate::registry::JobRegistry;
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
 pub struct TcpJob {

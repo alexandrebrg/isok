@@ -1,11 +1,9 @@
 use crate::jobs::http::HttpJob;
 use crate::jobs::tcp::TcpJob;
 use serde::{Deserialize, Serialize};
-use std::error::Error;
 use std::time::Duration;
 use tokio::sync::mpsc::UnboundedSender;
 use crate::batch_sender::JobResult;
-use crate::registry::JobRegistry;
 
 mod http;
 mod tcp;

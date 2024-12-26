@@ -6,7 +6,7 @@ use tracing_subscriber::{fmt, EnvFilter};
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use isok_agent::config::Config;
-use isok_agent::{errors, run};
+use isok_agent::{run};
 
 #[derive(thiserror::Error, Debug)]
 enum Error {

@@ -3,7 +3,7 @@ use futures::SinkExt;
 use tokio::sync::mpsc::UnboundedReceiver;
 use tokio::time::Instant;
 use isok_data::broker_rpc::broker_client::BrokerClient;
-use isok_data::broker_rpc::{BrokerGrpcClient, CheckJobStatus, CheckResult, HealthResponse};
+use isok_data::broker_rpc::{BrokerGrpcClient, CheckJobStatus, CheckResult};
 use crate::config::{BrokerConfig, ResultSenderAdapter};
 
 #[derive(Debug)]
