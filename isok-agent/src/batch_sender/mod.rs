@@ -3,7 +3,7 @@ use futures::SinkExt;
 use tokio::sync::mpsc::UnboundedReceiver;
 use tokio::time::Instant;
 use isok_data::broker_rpc::broker_client::BrokerClient;
-use isok_data::broker_rpc::{BrokerGrpcClient, CheckJobStatus, CheckResult};
+use isok_data::broker_rpc::{BrokerGrpcClient, CheckJobStatus, CheckResult, Tags};
 use crate::config::{BrokerConfig, ResultSenderAdapter};
 
 #[derive(Debug)]
@@ -96,6 +96,7 @@ pub struct BrokerBatchSender {
     backlog: Vec<JobResult>,
     zone: String,
     region: String,
+    agent_id: String,
     batch: usize,
     batch_interval: usize,
 }
@@ -108,6 +109,7 @@ impl BrokerBatchSender {
             client,
             backlog: vec![],
             broker: config.main_broker,
+            agent_id: config.agent_id,
             zone: config.zone,
             region: config.region,
             batch: config.batch,
@@ -119,8 +121,12 @@ impl BrokerBatchSender {
 impl BatchSenderOutput for BrokerBatchSender {
     async fn send(&mut self, job_result: JobResult) -> Result<(), BatchSenderError> {
         let request = isok_data::broker_rpc::CheckBatchRequest {
-            tags: Default::default(),
             created_at: None,
+            tags: Some(Tags {
+                    agent_id: self.agent_id.clone(),
+                    zone: self.zone.clone(),
+                    region: self.region.clone(),
+                }),
             events: vec![CheckResult {
                 check_uuid: job_result.id.clone(),
                 run_at: None,

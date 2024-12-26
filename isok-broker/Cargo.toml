@@ -6,8 +6,8 @@ edition = "2021"
 [dependencies]
 isok-data = { path = "../isok-data" }
 async-trait = "0.1.83"
-surf = "2.3.2"
-tokio = { version = "1.42.0", features = ["rt-multi-thread", "macros", "sync", "time"] }
+reqwest = { version = "0.12.9", features = ["json"] }
+tokio = { version = "1.42.0", features = ["rt-multi-thread", "macros", "sync", "time", "rt"] }
 serde = { version = "1.0.216", features = ["derive"] }
 figment = { version = "0.10.19", features = ["yaml"] }
 serde_yaml = "0.9.33"
@@ -15,6 +15,12 @@ thiserror = "2.0.7"
 clap = { version = "^4.5", features = ["derive", "env"] }
 tracing = { version = "^0.1" }
 tracing-subscriber = { version = "^0.3", features = ["env-filter"] }
+tonic = { version = "0.12.3" }
+prost = { version = "0.13.4" }
+enum_dispatch = { version = "0.3.13" }
+rdkafka = { version = "0.37", features = ["cmake-build"] }
 
 [dev-dependencies]
 pretty_assertions = { version = "^1.4" }
+testcontainers-modules = { version = "0.11.0", features = ["kafka"] }
+testcontainers = "0.23.1"

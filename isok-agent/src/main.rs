@@ -29,10 +29,6 @@ struct CliArgs {
 }
 
 impl CliArgs {
-    fn from_args() -> Result<Self, clap::Error> {
-        CliArgs::try_parse()
-    }
-
     fn get_possible_paths(bin_name: &str) -> Vec<PathBuf> {
         vec![
             PathBuf::from(format!("/etc/{bin_name}/agent.yaml")),
@@ -74,7 +70,6 @@ mod tests {
 
     #[test]
     fn test_cli_args_default() {
-        let args = CliArgs::from_args();
-        assert!(args.is_ok());
+        let mut args = CliArgs::parse();
     }
 }

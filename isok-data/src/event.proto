@@ -37,6 +37,10 @@ enum CheckJobStatus {
   Unknown = 0;
   Reachable = 1;
   Unreachable = 2;
+  // Timeout is a special status that is used to indicate that a job has been
+  // running for too long and has been killed. If this status is received, the
+  // offloader should consider the job as failed, as it reached system protections.
+  Timeout = 3;
 }
 
 message CheckJobMetrics {

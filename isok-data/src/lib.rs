@@ -23,3 +23,4 @@ pub mod broker_rpc {
     tonic::include_proto!("isok.broker.rpc");
     pub type BrokerGrpcClient = broker_client::BrokerClient<tonic::transport::Channel>;
 }
+

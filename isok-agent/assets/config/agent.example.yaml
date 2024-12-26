@@ -1,12 +1,16 @@
 result_sender_adapter:
   type: "broker"
   # Target broker configuration, we'd recommend to have at least one fallback broker.
-  main_broker: "http://broker.eu-fr-par1.localhost"
-  fallback_brokers:
-    - "http://broker.us-east-ny1.localhost"
+#  main_broker: "http://broker.eu-fr-par1.localhost"
+#  fallback_brokers:
+#    - "http://broker.us-east-ny1.localhost"
+  main_broker: "http://localhost:9000"
+  fallback_brokers: []
 
   zone: "dev"
   region: "localhost"
+
+  agent_id: "isok-agent-abcd"
 
   # Max number of message that can be buffered, if full, send to broker
   batch: 100

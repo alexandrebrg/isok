@@ -6,7 +6,12 @@ You can run the agent without any external broker, or complex infrastructure.
 It is able to run itself and output results to stdout. You just have to provide
 the appropriate configuration.
 
+```bash
+cargo run --bin isok-agent -- -config-path ./agent.yaml
+```
+
 ```yaml
+# agent.yaml
 result_sender_adapter:
   type: "stdout"
 

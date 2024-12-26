@@ -3,7 +3,6 @@ use crate::errors::{Error, Result};
 use tokio::join;
 use crate::batch_sender::BatchSender;
 
-mod brokers;
 pub mod config;
 pub mod errors;
 mod jobs;

@@ -60,6 +60,7 @@ pub enum ResultSenderAdapter {
 pub struct BrokerConfig {
     pub main_broker: String,
     pub fallback_brokers: Vec<String>,
+    pub agent_id: String,
     pub zone: String,
     pub region: String,
     pub batch: usize,
@@ -68,7 +69,7 @@ pub struct BrokerConfig {
 
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(tag = "name")]
-enum ConfigCheckAdapter {
+pub enum ConfigCheckAdapter {
     #[serde(rename = "static")]
     Static(StaticConfigAdapter),
     #[serde(rename = "file")]

@@ -9,6 +9,4 @@ tonic = "0.12.3"
 prost-types = "0.13.4"
 
 [build-dependencies]
-prost-types = {  version = "0.13.4" }
-prost = {  version = "0.13.4" }
 tonic-build = {  version = "0.12.3", features = ["prost"] }
