@@ -1,19 +1,22 @@
 mod api;
 mod message_broker;
 
+use crate::message_broker::{KafkaMessageBroker, MessageBroker, MessageBrokerError};
+use figment::providers::{Format, Yaml};
+use figment::Figment;
+use serde::Deserialize;
 use std::collections::HashMap;
 use std::net::{Ipv4Addr, SocketAddr};
 use std::path::PathBuf;
-use figment::Figment;
-use figment::providers::{Format, Yaml};
-use serde::Deserialize;
-use crate::message_broker::{KafkaMessageBroker, MessageBroker, MessageBrokerError};
 
 pub async fn run(config: Config) -> Result<(), Error> {
     let message_broker = KafkaMessageBroker::try_new(config.kafka)
         .inspect_err(|e| tracing::error!("Unable to create message broker: {:?}", e))?;
 
-    match api::BrokerGrpcService::new(MessageBroker::Kafka(message_broker)).run_on(config.api.listen_address).await {
+    match api::BrokerGrpcService::new(MessageBroker::Kafka(message_broker))
+        .run_on(config.api.listen_address)
+        .await
+    {
         Ok(_) => {}
         Err(e) => {
             tracing::error!("Unable to start API server: {:?}", e);
@@ -58,7 +61,10 @@ impl Default for Config {
         Config {
             kafka: KafkaConfig {
                 topic: "isok.agent.results".to_string(),
-                properties: HashMap::from([("bootstrap.servers".to_string(), "localhost:9092".to_string())]),
+                properties: HashMap::from([(
+                    "bootstrap.servers".to_string(),
+                    "localhost:9092".to_string(),
+                )]),
             },
             api: ApiConfig {
                 listen_address: SocketAddr::new(Ipv4Addr::LOCALHOST.into(), 9000),

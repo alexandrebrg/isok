@@ -1,11 +1,11 @@
-use std::path::PathBuf;
 use clap::Parser;
+use isok_broker::{run, Config, Error};
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 use tracing::level_filters::LevelFilter;
-use tracing_subscriber::{fmt, EnvFilter};
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
-use isok_broker::{run, Config, Error};
+use tracing_subscriber::{fmt, EnvFilter};
 
 #[derive(Parser, Serialize, Deserialize, Debug)]
 #[command(version, about, long_about = None)]
@@ -33,12 +33,19 @@ impl CliArgs {
 async fn main() -> Result<(), Error> {
     tracing_subscriber::registry()
         .with(fmt::layer())
-        .with(EnvFilter::builder().with_default_directive(LevelFilter::INFO.into()).from_env_lossy())
+        .with(
+            EnvFilter::builder()
+                .with_default_directive(LevelFilter::INFO.into())
+                .from_env_lossy(),
+        )
         .init();
     let mut args = CliArgs::parse();
     if args.config.is_none() {
         let possible_paths = CliArgs::get_possible_paths(env!("CARGO_PKG_NAME"));
-        tracing::debug!("No config file provided, looking for one in {:?}", possible_paths);
+        tracing::debug!(
+            "No config file provided, looking for one in {:?}",
+            possible_paths
+        );
         for path in possible_paths {
             if path.exists() {
                 tracing::info!("Using config file at {}", path.display());

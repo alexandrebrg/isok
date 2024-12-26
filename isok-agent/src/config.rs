@@ -1,10 +1,10 @@
 use crate::errors::{Error, Result};
+use crate::jobs::Job;
 use crate::registry::JobRegistry;
 use figment::providers::{Format, Yaml};
 use figment::Figment;
 use serde::Deserialize;
 use std::path::{Path, PathBuf};
-use crate::jobs::Job;
 
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct Config {
@@ -34,11 +34,9 @@ impl Default for Config {
     fn default() -> Self {
         Config {
             check_config_adapter: ConfigCheckAdapter::Static(StaticConfigAdapter {
-                checks: vec![
-
-                ],
+                checks: vec![],
             }),
-            result_sender_adapter: ResultSenderAdapter::Stdout
+            result_sender_adapter: ResultSenderAdapter::Stdout,
         }
     }
 }
@@ -113,7 +111,9 @@ mod tests {
 
     #[test]
     fn test_asset_example_config() {
-        let config_file = Config::from_config_file(env!("CARGO_MANIFEST_DIR").to_string() + "/assets/config/agent.example.yaml")
-            .expect("Unable to load default config");
+        let config_file = Config::from_config_file(
+            env!("CARGO_MANIFEST_DIR").to_string() + "/assets/config/agent.example.yaml",
+        )
+        .expect("Unable to load default config");
     }
 }

@@ -1,16 +1,16 @@
+use crate::batch_sender::JobResult;
 use crate::errors::Result;
 use crate::jobs::{Execute, Job};
 use crate::state::JobState;
+use dashmap::DashMap;
 use figment::providers::{Format, Yaml};
 use figment::Figment;
+use isok_data::JobPrettyName;
 use serde::Deserialize;
 use std::path::PathBuf;
 use std::time::Duration;
-use dashmap::DashMap;
-use tokio::sync::mpsc::{UnboundedSender};
+use tokio::sync::mpsc::UnboundedSender;
 use tokio::time::Instant;
-use isok_data::JobPrettyName;
-use crate::batch_sender::JobResult;
 
 pub struct JobRegistry {
     jobs: DashMap<JobPrettyName, JobState>,
@@ -55,7 +55,8 @@ impl JobRegistry {
     }
 
     fn append(&mut self, job: Job) {
-        self.jobs.insert(JobPrettyName::new(job.pretty_name()), JobState::new(job));
+        self.jobs
+            .insert(JobPrettyName::new(job.pretty_name()), JobState::new(job));
     }
 
     pub(crate) async fn execute(&self, tx: UnboundedSender<JobResult>) {

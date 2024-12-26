@@ -1,9 +1,9 @@
+use crate::batch_sender::JobResult;
 use crate::jobs::http::HttpJob;
 use crate::jobs::tcp::TcpJob;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use tokio::sync::mpsc::UnboundedSender;
-use crate::batch_sender::JobResult;
 
 mod http;
 mod tcp;
@@ -24,7 +24,6 @@ pub enum JobError {
     #[error("Unable to execute job {0}")]
     HttpError(#[from] reqwest::Error),
 }
-
 
 #[async_trait::async_trait]
 impl Execute for Job {

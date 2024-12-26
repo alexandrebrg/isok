@@ -1,10 +1,10 @@
+use crate::config::{BrokerConfig, ResultSenderAdapter};
 use enum_dispatch::enum_dispatch;
 use futures::SinkExt;
-use tokio::sync::mpsc::UnboundedReceiver;
-use tokio::time::Instant;
 use isok_data::broker_rpc::broker_client::BrokerClient;
 use isok_data::broker_rpc::{BrokerGrpcClient, CheckJobStatus, CheckResult, Tags};
-use crate::config::{BrokerConfig, ResultSenderAdapter};
+use tokio::sync::mpsc::UnboundedReceiver;
+use tokio::time::Instant;
 
 #[derive(Debug)]
 pub struct JobResult {
@@ -33,10 +33,15 @@ pub struct BatchSender {
 }
 
 impl BatchSender {
-    pub async fn new(adapter_cfg: ResultSenderAdapter, rx: UnboundedReceiver<JobResult>) -> Result<Self, BatchSenderError> {
+    pub async fn new(
+        adapter_cfg: ResultSenderAdapter,
+        rx: UnboundedReceiver<JobResult>,
+    ) -> Result<Self, BatchSenderError> {
         let connector = match adapter_cfg {
             ResultSenderAdapter::Stdout => BatchSenderType::Stdout(StdoutBatchSender::default()),
-            ResultSenderAdapter::Broker(config) => BatchSenderType::Broker(BrokerBatchSender::new(config).await?),
+            ResultSenderAdapter::Broker(config) => {
+                BatchSenderType::Broker(BrokerBatchSender::new(config).await?)
+            }
         };
         Ok(BatchSender { rx, connector })
     }
@@ -103,7 +108,8 @@ pub struct BrokerBatchSender {
 
 impl BrokerBatchSender {
     pub async fn new(config: BrokerConfig) -> Result<Self, BatchSenderError> {
-        let client = BrokerClient::connect(config.main_broker.clone()).await
+        let client = BrokerClient::connect(config.main_broker.clone())
+            .await
             .map_err(|_| BatchSenderError::InvalidBrokerEndpointConfiguration)?;
         Ok(BrokerBatchSender {
             client,
@@ -123,10 +129,10 @@ impl BatchSenderOutput for BrokerBatchSender {
         let request = isok_data::broker_rpc::CheckBatchRequest {
             created_at: None,
             tags: Some(Tags {
-                    agent_id: self.agent_id.clone(),
-                    zone: self.zone.clone(),
-                    region: self.region.clone(),
-                }),
+                agent_id: self.agent_id.clone(),
+                zone: self.zone.clone(),
+                region: self.region.clone(),
+            }),
             events: vec![CheckResult {
                 check_uuid: job_result.id.clone(),
                 run_at: None,
@@ -136,19 +142,26 @@ impl BatchSenderOutput for BrokerBatchSender {
                 details: Default::default(),
             }],
         };
-        self.client.batch_send(request).await.map_err(|e| BatchSenderError::UnableToSendBatch(e.to_string()))?;
+        self.client
+            .batch_send(request)
+            .await
+            .map_err(|e| BatchSenderError::UnableToSendBatch(e.to_string()))?;
         Ok(())
     }
 
     async fn health_check(&mut self) -> Result<(), BatchSenderError> {
-        match self.client.health(isok_data::broker_rpc::HealthRequest {}).await {
+        match self
+            .client
+            .health(isok_data::broker_rpc::HealthRequest {})
+            .await
+        {
             Ok(response) => {
                 if !response.get_ref().healthy {
                     return Err(BatchSenderError::BrokerUnhealthy);
                 }
                 Ok(())
             }
-            Err(_) => Err(BatchSenderError::BrokerUnhealthy)
+            Err(_) => Err(BatchSenderError::BrokerUnhealthy),
         }
     }
 }

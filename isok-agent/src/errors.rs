@@ -1,5 +1,5 @@
-use thiserror::Error;
 use crate::batch_sender::BatchSenderError;
+use thiserror::Error;
 
 pub type Result<T> = std::result::Result<T, Error>;
 

@@ -1,9 +1,9 @@
-use std::time::Duration;
-use prost::Message;
-use rdkafka::ClientConfig;
-use rdkafka::producer::{FutureProducer, FutureRecord};
-use isok_data::broker_rpc::CheckResult;
 use crate::KafkaConfig;
+use isok_data::broker_rpc::CheckResult;
+use prost::Message;
+use rdkafka::producer::{FutureProducer, FutureRecord};
+use rdkafka::ClientConfig;
+use std::time::Duration;
 
 #[derive(Debug, thiserror::Error)]
 pub enum MessageBrokerError {
@@ -12,7 +12,7 @@ pub enum MessageBrokerError {
     #[error("The message broker isn't able to process any message")]
     ServiceUnhealthy,
     #[error("A batch or single check result couldn't be stored persistently: {0}")]
-    UnableToStoreCheckResult(String)
+    UnableToStoreCheckResult(String),
 }
 
 #[enum_dispatch::enum_dispatch(MessageBrokerSender)]
@@ -45,8 +45,10 @@ impl MessageBrokerSender for KafkaMessageBroker {
             .payload(&buffer)
             .key(&message.check_uuid);
 
-        self.producer.send(record, Duration::from_secs(2)).
-            await.map_err(|e| MessageBrokerError::UnableToStoreCheckResult(format!("{:?}", e)))?;
+        self.producer
+            .send(record, Duration::from_secs(2))
+            .await
+            .map_err(|e| MessageBrokerError::UnableToStoreCheckResult(format!("{:?}", e)))?;
         Ok(())
     }
 
@@ -59,10 +61,7 @@ impl KafkaMessageBroker {
     pub fn try_new(config: KafkaConfig) -> Result<Self, MessageBrokerError> {
         let topic = config.topic.clone();
         let producer = FutureProducer::try_from(config)?;
-        Ok(KafkaMessageBroker {
-            producer,
-            topic,
-        })
+        Ok(KafkaMessageBroker { producer, topic })
     }
 }
 
@@ -71,28 +70,28 @@ impl TryFrom<KafkaConfig> for FutureProducer {
 
     fn try_from(value: KafkaConfig) -> Result<Self, Self::Error> {
         let mut client = ClientConfig::new();
-        client
-            .set("message.timeout.ms", "5000");
+        client.set("message.timeout.ms", "5000");
 
         for (key, value) in value.properties {
             client.set(key, value);
         }
 
-        client.create()
+        client
+            .create()
             .map_err(|e| MessageBrokerError::UnableToCreateProducer(e))
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-    use std::time::{Instant, SystemTime, UNIX_EPOCH};
+    use super::*;
+    use isok_data::broker_rpc::{CheckBatchRequest, CheckJobStatus};
     use prost::Message;
     use rdkafka::consumer::{Consumer, StreamConsumer};
-    use rdkafka::{Message as KafkaMessage};
     use rdkafka::mocking::MockCluster;
-    use isok_data::broker_rpc::{CheckBatchRequest, CheckJobStatus};
-    use super::*;
+    use rdkafka::Message as KafkaMessage;
+    use std::collections::HashMap;
+    use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_kafka_message_integrity() {
@@ -105,10 +104,14 @@ mod tests {
 
         let config = KafkaConfig {
             topic: topic.to_string(),
-            properties: HashMap::from([("bootstrap.servers".to_string(), mock_cluster.bootstrap_servers())]),
+            properties: HashMap::from([(
+                "bootstrap.servers".to_string(),
+                mock_cluster.bootstrap_servers(),
+            )]),
         };
 
-        let kafka = KafkaMessageBroker::try_new(config).expect("Failed to create Kafka message broker");
+        let kafka =
+            KafkaMessageBroker::try_new(config).expect("Failed to create Kafka message broker");
         let batch = vec![CheckResult {
             check_uuid: "test".to_string(),
             run_at: None,
@@ -118,11 +121,6 @@ mod tests {
             details: Default::default(),
         }];
 
-        let producer: FutureProducer = ClientConfig::new()
-            .set("bootstrap.servers", mock_cluster.bootstrap_servers())
-            .create()
-            .expect("Producer creation error");
-
         let batch_thread = batch.clone();
         tokio::spawn(async move {
             // @AlexandreBrg: There is an issue with the mocked cluster,
@@ -131,10 +129,13 @@ mod tests {
             // multiple things to fix it, but nothing worked.
             // Related issue: https://github.com/fede1024/rust-rdkafka/issues/629
             let mut i = 0_usize;
-           loop {
-               kafka.process_batch(&batch_thread).await.expect("Failed to process batch");
+            loop {
+                kafka
+                    .process_batch(&batch_thread)
+                    .await
+                    .expect("Failed to process batch");
                 i += 1;
-           }
+            }
         });
 
         let consumer: StreamConsumer = ClientConfig::new()
@@ -153,5 +154,4 @@ mod tests {
         let mut message = CheckResult::decode(payload).expect("Expected decode to succeed");
         assert_eq!(message, batch[0]);
     }
-
 }
