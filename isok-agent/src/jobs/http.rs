@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::Duration;
 use tokio::sync::mpsc::UnboundedSender;
-use isok_data::{CheckJobStatus, CheckResult};
+use isok_data::broker_rpc::CheckJobStatus;
 use crate::batch_sender::JobResult;
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]

@@ -1,5 +1,5 @@
-use isok_data::CheckResult;
 use tokio::sync::RwLock;
+use isok_data::broker_rpc::CheckResult;
 
 enum Broker {
     Grpc,

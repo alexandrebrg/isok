@@ -8,13 +8,8 @@ use crate::jobs::Job;
 
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct Config {
-    main_broker: String,
-    fallback_brokers: Vec<String>,
-    zone: String,
-    region: String,
-    batch: usize,
-    batch_interval: usize,
-    check_config_adapter: ConfigCheckAdapter,
+    pub check_config_adapter: ConfigCheckAdapter,
+    pub result_sender_adapter: ResultSenderAdapter,
 }
 
 impl GetJobsRegistry for Config {
@@ -38,25 +33,37 @@ impl Config {
 impl Default for Config {
     fn default() -> Self {
         Config {
-            main_broker: "http://localhost:9000".to_string(),
-            fallback_brokers: vec![
-                "http://localhost:9001".to_string(),
-            ],
-            zone: "dev".to_string(),
-            region: "localhost".to_string(),
-            batch: 100,
-            batch_interval: 10,
             check_config_adapter: ConfigCheckAdapter::Static(StaticConfigAdapter {
                 checks: vec![
 
                 ],
             }),
+            result_sender_adapter: ResultSenderAdapter::Stdout
         }
     }
 }
 
 pub trait GetJobsRegistry {
     fn get_jobs_registry(&self) -> Result<JobRegistry>;
+}
+
+#[derive(Debug, Deserialize, PartialEq)]
+#[serde(tag = "type")]
+pub enum ResultSenderAdapter {
+    #[serde(rename = "stdout")]
+    Stdout,
+    #[serde(rename = "broker")]
+    Broker(BrokerConfig),
+}
+
+#[derive(Debug, Deserialize, PartialEq)]
+pub struct BrokerConfig {
+    pub main_broker: String,
+    pub fallback_brokers: Vec<String>,
+    pub zone: String,
+    pub region: String,
+    pub batch: usize,
+    pub batch_interval: usize,
 }
 
 #[derive(Debug, Deserialize, PartialEq)]

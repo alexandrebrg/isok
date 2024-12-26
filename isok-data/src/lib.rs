@@ -1,7 +1,5 @@
 use std::ops::Deref;
 
-include!(concat!(env!("OUT_DIR"), "/isok.broker.rpc.rs"));
-
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct JobPrettyName {
     inner: String,
@@ -19,4 +17,9 @@ impl Deref for JobPrettyName {
     fn deref(&self) -> &Self::Target {
         &self.inner
     }
+}
+
+pub mod broker_rpc {
+    tonic::include_proto!("isok.broker.rpc");
+    pub type BrokerGrpcClient = broker_client::BrokerClient<tonic::transport::Channel>;
 }

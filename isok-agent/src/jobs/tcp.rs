@@ -6,7 +6,7 @@ use std::str::FromStr;
 use std::time::Duration;
 use tokio::net::TcpStream;
 use tokio::sync::mpsc::UnboundedSender;
-use isok_data::CheckJobStatus;
+use isok_data::broker_rpc::CheckJobStatus;
 use crate::batch_sender::JobResult;
 use crate::registry::JobRegistry;
 
@@ -65,6 +65,8 @@ impl Execute for TcpJob {
 
 #[cfg(test)]
 mod tests {
+    use isok_data::broker_rpc::CheckJobStatus;
+    use crate::jobs::Execute;
     use crate::jobs::tcp::TcpJob;
 
     #[tokio::test]
@@ -86,5 +88,53 @@ mod tests {
         let jobs = vec![tcp, tcp2];
         let a = serde_yaml::to_string(&jobs);
         println!("{:#}", a.unwrap());
+    }
+
+    #[tokio::test]
+    async fn test_tcp_job_invalid_endpoint() {
+        let tcp = TcpJob {
+            endpoint: "toto".to_string(),
+            interval: 0,
+            secured: false,
+            pretty_name: "".to_string(),
+        };
+        let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
+        tcp.execute(tx).await.expect("Expected execution to succeed");
+        let result = rx.recv().await.expect("Expected to receive unreachable result");
+
+        assert_eq!(result.status, CheckJobStatus::Unreachable);
+    }
+
+    #[tokio::test]
+    async fn test_tcp_job_valid_endpoint_online() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.expect("Unable to bind to port");
+        let port = listener.local_addr().unwrap().port();
+        tokio::spawn(async move {
+            let (socket, _) = listener.accept().await.expect("Unable to accept connection");
+        });
+        let tcp = TcpJob {
+            endpoint: "127.0.0.1".to_string() + ":" + &port.to_string(),
+            interval: 0,
+            secured: false,
+            pretty_name: "".to_string(),
+        };
+        let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
+        tcp.execute(tx).await.expect("Expected execution to succeed");
+        let result = rx.recv().await.expect("Expected to receive reachable result");
+        assert_eq!(result.status, CheckJobStatus::Reachable);
+    }
+
+    #[tokio::test]
+    async fn test_tcp_job_valid_endpoint_offline() {
+        let tcp = TcpJob {
+            endpoint: "127.0.0.1:65534".to_string(),
+            interval: 0,
+            secured: false,
+            pretty_name: "".to_string(),
+        };
+        let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
+        tcp.execute(tx).await.expect("Expected execution to succeed");
+        let result = rx.recv().await.expect("Expected to receive reachable result");
+        assert_eq!(result.status, CheckJobStatus::Unreachable);
     }
 }

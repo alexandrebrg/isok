@@ -10,7 +10,11 @@ service Broker {
   /// isn't able to process the batch, it should return an error.
   /// In this case, the agent should send their batch to another broker,
   /// to prevent lag.
-  rpc Send(CheckBatchRequest) returns (CheckBatchResponse) {}
+  rpc BatchSend(CheckBatchRequest) returns (CheckBatchResponse) {}
+  /// Allows to check if the broker is healthy
+  /// Agents will call this method with interval, to ensure
+  /// checks have most chance to be sent.
+  rpc Health(HealthRequest) returns (HealthResponse) {}
 }
 
 
@@ -61,4 +65,10 @@ message CheckBatchRequest {
 
 message CheckBatchResponse {
   optional string error = 1;
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  bool healthy = 1;
 }

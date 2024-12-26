@@ -9,12 +9,6 @@ tonic = "0.12.3"
 prost-types = "0.13.4"
 
 [build-dependencies]
-prost-types = {  version = "0.13.4", optional = true }
-prost = {  version = "0.13.4", optional = true }
-prost-build = {  version = "0.13.4", optional = true }
-tonic-build = {  version = "0.12.3", optional = true }
-
-[features]
-default = ["prost"]
-prost = ["dep:prost-types", "dep:prost", "dep:prost-build"]
-tonic = ["dep:tonic-build"]
+prost-types = {  version = "0.13.4" }
+prost = {  version = "0.13.4" }
+tonic-build = {  version = "0.12.3", features = ["prost"] }

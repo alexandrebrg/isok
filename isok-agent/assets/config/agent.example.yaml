@@ -1,15 +1,17 @@
-# Target broker configuration, we'd recommend to have at least one fallback broker.
-main_broker: "http://broker.eu-fr-par1.localhost"
-fallback_brokers:
-  - "http://broker.us-east-ny1.localhost"
+result_sender_adapter:
+  type: "broker"
+  # Target broker configuration, we'd recommend to have at least one fallback broker.
+  main_broker: "http://broker.eu-fr-par1.localhost"
+  fallback_brokers:
+    - "http://broker.us-east-ny1.localhost"
 
-zone: "dev"
-region: "localhost"
+  zone: "dev"
+  region: "localhost"
 
-# Max number of message that can be buffered, if full, send to broker
-batch: 100
-# Maximum interval to which we send a batch
-batch_interval: 10
+  # Max number of message that can be buffered, if full, send to broker
+  batch: 100
+  # Maximum interval to which we send a batch
+  batch_interval: 10
 
 check_config_adapter:
   name: "static"
