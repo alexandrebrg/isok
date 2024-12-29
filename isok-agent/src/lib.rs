@@ -6,7 +6,7 @@ use tokio::join;
 mod batch_sender;
 pub mod config;
 pub mod errors;
-mod jobs;
+pub mod jobs;
 mod registry;
 mod state;
 

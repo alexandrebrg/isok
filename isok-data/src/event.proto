@@ -19,7 +19,7 @@ service Broker {
 
 
 message CheckResult {
-  string check_uuid = 1;
+  string id_ulid = 1;
 
   google.protobuf.Timestamp run_at = 2;
 

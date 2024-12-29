@@ -84,13 +84,13 @@ impl GetJobsRegistry for ConfigCheckAdapter {
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
-struct FileConfigCheckAdapter {
+pub struct FileConfigCheckAdapter {
     path: String,
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
-struct StaticConfigAdapter {
-    checks: Vec<Job>,
+pub struct StaticConfigAdapter {
+    pub checks: Vec<Job>,
 }
 
 impl GetJobsRegistry for FileConfigCheckAdapter {

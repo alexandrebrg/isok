@@ -5,16 +5,17 @@ use isok_data::broker_rpc::broker_client::BrokerClient;
 use isok_data::broker_rpc::{BrokerGrpcClient, CheckJobStatus, CheckResult, Tags};
 use tokio::sync::mpsc::UnboundedReceiver;
 use tokio::time::Instant;
+use isok_data::JobId;
 
 #[derive(Debug)]
 pub struct JobResult {
-    pub id: String,
+    pub id: JobId,
     pub run_at: Instant,
     pub status: CheckJobStatus,
 }
 
 impl JobResult {
-    pub fn new(id: String) -> Self {
+    pub fn new(id: JobId) -> Self {
         JobResult {
             id,
             run_at: Instant::now(),
@@ -134,7 +135,7 @@ impl BatchSenderOutput for BrokerBatchSender {
                 region: self.region.clone(),
             }),
             events: vec![CheckResult {
-                check_uuid: job_result.id.clone(),
+                id_ulid: job_result.id.clone().to_string(),
                 run_at: None,
                 status: job_result.status.into(),
                 metrics: Default::default(),

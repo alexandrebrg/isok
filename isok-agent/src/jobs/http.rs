@@ -5,9 +5,12 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::Duration;
 use tokio::sync::mpsc::UnboundedSender;
+use isok_data::JobId;
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
 pub struct HttpJob {
+    #[serde(default = "JobId::generate")]
+    id: JobId,
     endpoint: String,
     pretty_name: String,
     interval: u64,
@@ -17,6 +20,7 @@ pub struct HttpJob {
 impl HttpJob {
     pub fn new(endpoint: String) -> Self {
         Self {
+            id: JobId::generate(),
             endpoint,
             pretty_name: "".to_string(),
             interval: 0,
@@ -28,7 +32,7 @@ impl HttpJob {
 #[async_trait::async_trait]
 impl Execute for HttpJob {
     async fn execute(&self, tx: UnboundedSender<JobResult>) -> Result<(), JobError> {
-        let mut msg = JobResult::new(self.pretty_name.clone());
+        let mut msg = JobResult::new(self.id());
         let client = reqwest::Client::new();
         match client.get(&self.endpoint).send().await {
             Ok(response) => {
@@ -47,6 +51,10 @@ impl Execute for HttpJob {
 
     fn pretty_name(&self) -> String {
         self.pretty_name.clone()
+    }
+
+    fn id(&self) -> JobId {
+        self.id.clone()
     }
 
     fn interval(&self) -> Duration {

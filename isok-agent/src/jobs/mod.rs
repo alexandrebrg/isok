@@ -4,9 +4,10 @@ use crate::jobs::tcp::TcpJob;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use tokio::sync::mpsc::UnboundedSender;
+use isok_data::JobId;
 
-mod http;
-mod tcp;
+pub mod http;
+pub mod tcp;
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
 #[serde(tag = "type")]
@@ -41,6 +42,13 @@ impl Execute for Job {
         }
     }
 
+    fn id(&self) -> JobId {
+        match self {
+            Job::Tcp(job) => job.id(),
+            Job::Http(job) => job.id(),
+        }
+    }
+
     fn interval(&self) -> Duration {
         match self {
             Job::Tcp(job) => job.interval(),
@@ -53,24 +61,61 @@ impl Execute for Job {
 pub trait Execute {
     async fn execute(&self, tx: UnboundedSender<JobResult>) -> Result<(), JobError>;
     fn pretty_name(&self) -> String;
+    fn id(&self) -> JobId;
     fn interval(&self) -> Duration;
 }
 
 #[cfg(test)]
 mod tests {
+    use serde::{Deserialize, Serialize};
+    use isok_data::JobId;
     use crate::jobs::http::HttpJob;
     use crate::jobs::tcp::TcpJob;
-    use crate::jobs::Job;
+    use crate::jobs::{Execute, Job};
 
-    #[tokio::test]
-    async fn test_ser() {
-        let jobs = vec![
-            Job::Tcp(TcpJob::new("toto".to_string())),
-            Job::Http(HttpJob::new("tata".to_string())),
-        ];
-        let a = serde_yaml::to_string(&jobs).unwrap();
-        println!("{}", a);
-        let b: Vec<Job> = serde_yaml::from_str(&a).unwrap();
-        dbg!(b);
+    #[derive(Debug, Deserialize, Serialize)]
+    struct DummyRootJob {
+        jobs: Vec<Job>,
+    }
+
+    #[test]
+    fn test_job_id_serde_generate() {
+        let config = r#"
+        jobs:
+            - type: "http"
+              pretty_name: "5s failing endpoint"
+              endpoint: "https://my_endpoint.com/api/v1/healthy?system_only=true"
+              interval: 5
+              headers:
+                Authorization: "Bearer..."
+            "#;
+        let root: DummyRootJob = serde_yaml::from_str(config).unwrap();
+        match &root.jobs[0] {
+            Job::Http(job) => {
+                assert_eq!(job.id().to_string().len(), 26);
+            }
+            _ => panic!("Expected to be able to deserialize job"),
+        }
+    }
+
+    #[test]
+    fn test_job_id_serde_from_ulid() {
+        let config = r#"
+        jobs:
+            - type: "http"
+              id: "01ARZ3NDEKTSV4RRWETS2EGZ5M"
+              pretty_name: "5s failing endpoint"
+              endpoint: "https://my_endpoint.com/api/v1/healthy?system_only=true"
+              interval: 5
+              headers:
+                Authorization: "Bearer..."
+            "#;
+        let root: DummyRootJob = serde_yaml::from_str(config).unwrap();
+        match &root.jobs[0] {
+            Job::Http(job) => {
+                assert_eq!(job.id().to_string(), "01ARZ3NDEKTSV4RRWETS2EGZ5M");
+            }
+            _ => panic!("Expected to be able to deserialize job"),
+        }
     }
 }

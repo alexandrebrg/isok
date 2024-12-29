@@ -43,7 +43,7 @@ impl MessageBrokerSender for KafkaMessageBroker {
         message.encode(&mut buffer).unwrap();
         let record = FutureRecord::to(&self.topic)
             .payload(&buffer)
-            .key(&message.check_uuid);
+            .key(&message.id_ulid);
 
         self.producer
             .send(record, Duration::from_secs(2))
@@ -85,13 +85,12 @@ impl TryFrom<KafkaConfig> for FutureProducer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use isok_data::broker_rpc::{CheckBatchRequest, CheckJobStatus};
+    use isok_data::broker_rpc::CheckJobStatus;
     use prost::Message;
     use rdkafka::consumer::{Consumer, StreamConsumer};
     use rdkafka::mocking::MockCluster;
     use rdkafka::Message as KafkaMessage;
     use std::collections::HashMap;
-    use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_kafka_message_integrity() {
@@ -113,7 +112,7 @@ mod tests {
         let kafka =
             KafkaMessageBroker::try_new(config).expect("Failed to create Kafka message broker");
         let batch = vec![CheckResult {
-            check_uuid: "test".to_string(),
+            id_ulid: "test".to_string(),
             run_at: None,
             status: CheckJobStatus::Reachable.into(),
             metrics: Default::default(),
@@ -151,7 +150,7 @@ mod tests {
         let msg = consumer.recv().await.expect("Expected message");
         let payload = msg.payload().expect("Expected payload");
 
-        let mut message = CheckResult::decode(payload).expect("Expected decode to succeed");
+        let message = CheckResult::decode(payload).expect("Expected decode to succeed");
         assert_eq!(message, batch[0]);
     }
 }
