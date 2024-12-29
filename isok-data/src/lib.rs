@@ -1,6 +1,6 @@
+use serde::{Deserialize, Serialize};
 use std::ops::Deref;
 use ulid::Ulid;
-use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Debug, Clone, PartialEq, Eq, Hash, Deserialize)]
 pub struct JobId(Ulid);

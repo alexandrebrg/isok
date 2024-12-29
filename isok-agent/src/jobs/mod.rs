@@ -1,10 +1,10 @@
 use crate::batch_sender::JobResult;
 use crate::jobs::http::HttpJob;
 use crate::jobs::tcp::TcpJob;
+use isok_data::JobId;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use tokio::sync::mpsc::UnboundedSender;
-use isok_data::JobId;
 
 pub mod http;
 pub mod tcp;
@@ -67,11 +67,11 @@ pub trait Execute {
 
 #[cfg(test)]
 mod tests {
-    use serde::{Deserialize, Serialize};
-    use isok_data::JobId;
-    use crate::jobs::http::HttpJob;
-    use crate::jobs::tcp::TcpJob;
+    
+    
     use crate::jobs::{Execute, Job};
+    
+    use serde::{Deserialize, Serialize};
 
     #[derive(Debug, Deserialize, Serialize)]
     struct DummyRootJob {

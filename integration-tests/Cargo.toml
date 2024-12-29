@@ -1,0 +1,21 @@
+[package]
+name = "integration-tests"
+version = "0.1.0"
+edition = "2021"
+
+[dev-dependencies]
+isok-agent = { path = "../isok-agent" }
+isok-broker = { path = "../isok-broker" }
+isok-data = { path = "../isok-data" }
+testcontainers = { version = "0.23.1" }
+testcontainers-modules = { version = "0.11.4", features = ["kafka"] }
+rdkafka = { version = "0.37", features = ["cmake-build"] }
+tokio = { version = "1.42.0", features = ["full"] }
+hyper = { version = "1", features = ["full"] }
+http-body-util = "0.1"
+hyper-util = { version = "0.1", features = ["full"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing = { version = "0.1" }
+tempfile = "3.3.0"
+prost = "0.13.4"
+pretty_assertions = "1.4.0"

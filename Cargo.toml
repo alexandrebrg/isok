@@ -1,4 +1,3 @@
-resolver = "2"
-
 [workspace]
-members = ["isok-agent", "isok-broker", "isok-data"]
+resolver = "2"
+members = [ "integration-tests","isok-agent", "isok-broker", "isok-data"]

@@ -1,13 +1,13 @@
 use crate::batch_sender::JobResult;
 use crate::jobs::{Execute, JobError};
 use isok_data::broker_rpc::CheckJobStatus;
+use isok_data::JobId;
 use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
 use std::str::FromStr;
 use std::time::Duration;
 use tokio::net::TcpStream;
 use tokio::sync::mpsc::UnboundedSender;
-use isok_data::JobId;
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
 pub struct TcpJob {
@@ -24,10 +24,15 @@ impl TcpJob {
         TcpJob {
             id: JobId::generate(),
             endpoint,
-            interval: 0,
+            interval: 1,
             secured: false,
             pretty_name: "".to_string(),
         }
+    }
+
+    pub fn with_interval(mut self, interval: u64) -> Self {
+        self.interval = interval;
+        self
     }
 }
 

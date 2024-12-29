@@ -52,6 +52,14 @@ pub enum ResultSenderAdapter {
     Stdout,
     #[serde(rename = "broker")]
     Broker(BrokerConfig),
+    #[serde(rename = "socket")]
+    Socket(SocketConfig),
+}
+
+#[derive(Debug, Deserialize, PartialEq, Clone)]
+pub struct SocketConfig {
+    /// Path to a unix socket that
+    pub path: PathBuf,
 }
 
 #[derive(Debug, Deserialize, PartialEq)]

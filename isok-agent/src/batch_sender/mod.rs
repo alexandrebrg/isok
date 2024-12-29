@@ -1,11 +1,13 @@
-use crate::config::{BrokerConfig, ResultSenderAdapter};
+use crate::config::{BrokerConfig, ResultSenderAdapter, SocketConfig};
 use enum_dispatch::enum_dispatch;
-use futures::SinkExt;
 use isok_data::broker_rpc::broker_client::BrokerClient;
 use isok_data::broker_rpc::{BrokerGrpcClient, CheckJobStatus, CheckResult, Tags};
+use isok_data::JobId;
+use prost::Message;
+use tokio::io::AsyncWriteExt;
+use tokio::net::UnixStream;
 use tokio::sync::mpsc::UnboundedReceiver;
 use tokio::time::Instant;
-use isok_data::JobId;
 
 #[derive(Debug)]
 pub struct JobResult {
@@ -39,9 +41,12 @@ impl BatchSender {
         rx: UnboundedReceiver<JobResult>,
     ) -> Result<Self, BatchSenderError> {
         let connector = match adapter_cfg {
-            ResultSenderAdapter::Stdout => BatchSenderType::Stdout(StdoutBatchSender::default()),
+            ResultSenderAdapter::Stdout => BatchSenderType::Stdout(StdoutBatchSender::new()),
             ResultSenderAdapter::Broker(config) => {
                 BatchSenderType::Broker(BrokerBatchSender::new(config).await?)
+            }
+            ResultSenderAdapter::Socket(config) => {
+                BatchSenderType::Socket(SocketBatchSender::new(config).await?)
             }
         };
         Ok(BatchSender { rx, connector })
@@ -67,12 +72,17 @@ pub enum BatchSenderError {
     BrokerUnhealthy,
     #[error("Unable to send job result: {0}")]
     UnableToSendBatch(String),
+    #[error("Unable to forward job result to socket: {0}")]
+    WriteSocketError(String),
+    #[error("Unable to connect to socket: {0}")]
+    OpenSocketError(String),
 }
 
 #[enum_dispatch(BatchSenderOutput)]
 pub enum BatchSenderType {
     Stdout(StdoutBatchSender),
     Broker(BrokerBatchSender),
+    Socket(SocketBatchSender),
 }
 
 #[enum_dispatch]
@@ -82,8 +92,69 @@ pub trait BatchSenderOutput {
     async fn health_check(&mut self) -> Result<(), BatchSenderError>;
 }
 
-#[derive(Default)]
+pub struct SocketBatchSender {
+    stream: UnixStream,
+}
+
+impl SocketBatchSender {
+    pub async fn new(config: SocketConfig) -> Result<Self, BatchSenderError> {
+        let stream = UnixStream::connect(config.path)
+            .await
+            .map_err(|e| BatchSenderError::OpenSocketError(e.to_string()))?;
+        Ok(Self { stream })
+    }
+}
+
+impl BatchSenderOutput for SocketBatchSender {
+    async fn send(&mut self, job_result: JobResult) -> Result<(), BatchSenderError> {
+        let request = isok_data::broker_rpc::CheckBatchRequest {
+            created_at: None,
+            tags: Some(Tags {
+                agent_id: "local-agent".to_string(),
+                zone: "dev".to_string(),
+                region: "localhost".to_string(),
+            }),
+            events: vec![CheckResult {
+                id_ulid: job_result.id.clone().to_string(),
+                run_at: None,
+                status: job_result.status.into(),
+                metrics: Default::default(),
+                tags: None,
+                details: Default::default(),
+            }],
+        };
+        let mut buffer = Vec::new();
+        request.encode(&mut buffer).unwrap();
+
+        // We first write the length of the message into 8 bytes (more than necessary),
+        // then the message itself
+        let len = buffer.len();
+        let mut len_bytes = [0u8; 8];
+        len_bytes = len.to_be_bytes();
+        self.stream
+            .write_all(&len_bytes)
+            .await
+            .map_err(|e| BatchSenderError::WriteSocketError(e.to_string()))?;
+
+        self.stream
+            .write_all(&buffer)
+            .await
+            .map_err(|e| BatchSenderError::WriteSocketError(e.to_string()))?;
+        Ok(())
+    }
+
+    async fn health_check(&mut self) -> Result<(), BatchSenderError> {
+        Ok(())
+    }
+}
+
 pub struct StdoutBatchSender {}
+
+impl StdoutBatchSender {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
 
 impl BatchSenderOutput for StdoutBatchSender {
     async fn send(&mut self, job_result: JobResult) -> Result<(), BatchSenderError> {

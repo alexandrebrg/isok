@@ -70,13 +70,3 @@ async fn main() -> Result<(), Error> {
     };
     run(config).await.map_err(Error::UnableToRunAgent)
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_cli_args_default() {
-        let mut args = CliArgs::parse();
-    }
-}
