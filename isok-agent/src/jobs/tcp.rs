@@ -132,7 +132,7 @@ mod tests {
             .expect("Unable to bind to port");
         let port = listener.local_addr().unwrap().port();
         tokio::spawn(async move {
-            let (socket, _) = listener
+            let (_, _) = listener
                 .accept()
                 .await
                 .expect("Unable to accept connection");

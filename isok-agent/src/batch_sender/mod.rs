@@ -129,6 +129,9 @@ impl BatchSenderOutput for SocketBatchSender {
         // We first write the length of the message into 8 bytes (more than necessary),
         // then the message itself
         let len = buffer.len();
+        // Linter rings a bell, but we need to define the array size
+        // to avoid variable array size
+        #[allow(unused_assignments)]
         let mut len_bytes = [0u8; 8];
         len_bytes = len.to_be_bytes();
         self.stream
@@ -144,7 +147,7 @@ impl BatchSenderOutput for SocketBatchSender {
     }
 
     async fn health_check(&mut self) -> Result<(), BatchSenderError> {
-        Ok(())
+        self.stream.writable().await.map_err(|e| BatchSenderError::WriteSocketError(e.to_string()))
     }
 }
 
@@ -167,13 +170,17 @@ impl BatchSenderOutput for StdoutBatchSender {
     }
 }
 
+// Batch processing is not implemented yet, thus we want to keep
+// the code around for now
+#[allow(dead_code)]
 pub struct BrokerBatchSender {
     client: BrokerGrpcClient,
-    broker: String,
-    backlog: Vec<JobResult>,
     zone: String,
     region: String,
     agent_id: String,
+
+    backlog: Vec<JobResult>,
+
     batch: usize,
     batch_interval: usize,
 }
@@ -186,7 +193,6 @@ impl BrokerBatchSender {
         Ok(BrokerBatchSender {
             client,
             backlog: vec![],
-            broker: config.main_broker,
             agent_id: config.agent_id,
             zone: config.zone,
             region: config.region,

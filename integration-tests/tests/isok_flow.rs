@@ -16,14 +16,12 @@ static NEXT_PORT: AtomicUsize = AtomicUsize::new(24000);
 
 struct AgentTestingRunner {
     config: AgentConfig,
-    sample_server_handlers: Vec<JoinHandle<()>>,
 }
 
 impl AgentTestingRunner {
     pub fn new() -> Self {
         Self {
             config: AgentConfig::default(),
-            sample_server_handlers: vec![],
         }
     }
 
@@ -94,18 +92,6 @@ impl AgentTestingRunner {
     fn run(self) -> JoinHandle<()> {
         tokio::spawn(self.start_threads())
     }
-}
-
-#[derive(Debug, PartialEq, Clone)]
-struct SampleServerConfig {
-    protocol: SampleServerType,
-    port: u16,
-}
-
-#[derive(Debug, PartialEq, Clone)]
-enum SampleServerType {
-    Http,
-    Tcp,
 }
 
 #[tokio::test]

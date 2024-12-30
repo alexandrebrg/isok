@@ -119,7 +119,7 @@ mod tests {
 
     #[test]
     fn test_asset_example_config() {
-        let config_file = Config::from_config_file(
+        let _ = Config::from_config_file(
             env!("CARGO_MANIFEST_DIR").to_string() + "/assets/config/agent.example.yaml",
         )
         .expect("Unable to load default config");

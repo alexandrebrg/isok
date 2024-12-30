@@ -41,10 +41,10 @@ impl Execute for HttpJob {
         let client = reqwest::Client::new();
         match client.get(&self.endpoint).send().await {
             Ok(response) => {
-                let status = response.status();
+                let _ = response.status();
                 msg.set_status(CheckJobStatus::Reachable);
             }
-            Err(e) => {
+            Err(_) => {
                 msg.set_status(CheckJobStatus::Unreachable);
             }
         }

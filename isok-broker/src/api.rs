@@ -45,7 +45,7 @@ impl Broker for BrokerGrpcService {
     }
     async fn health(
         &self,
-        request: tonic::Request<HealthRequest>,
+        _: tonic::Request<HealthRequest>,
     ) -> Result<tonic::Response<HealthResponse>, tonic::Status> {
         Ok(tonic::Response::new(HealthResponse { healthy: true }))
     }

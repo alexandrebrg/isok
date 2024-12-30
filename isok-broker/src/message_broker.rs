@@ -127,13 +127,16 @@ mod tests {
             // I personally think it's linked to queue buffering properties, tried
             // multiple things to fix it, but nothing worked.
             // Related issue: https://github.com/fede1024/rust-rdkafka/issues/629
-            let mut i = 0_usize;
+            let mut i: usize = 0;
             loop {
                 kafka
                     .process_batch(&batch_thread)
                     .await
                     .expect("Failed to process batch");
                 i += 1;
+                if i > 100000 {
+                    break;
+                }
             }
         });
 
