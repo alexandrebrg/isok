@@ -1,11 +1,11 @@
 use crate::batch_sender::JobResult;
 use crate::jobs::http::HttpJob;
 use crate::jobs::tcp::TcpJob;
+use async_trait::async_trait;
+use enum_dispatch::enum_dispatch;
 use isok_data::JobId;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
-use async_trait::async_trait;
-use enum_dispatch::enum_dispatch;
 use tokio::sync::mpsc::UnboundedSender;
 
 pub mod http;
@@ -98,12 +98,12 @@ pub trait Execute {
 
 #[cfg(test)]
 mod tests {
-    use std::time::Duration;
     use crate::jobs::{Job, JobInnerConfig};
-    
-    use serde::{Deserialize, Serialize};
-    use isok_data::JobId;
+    use std::time::Duration;
+
     use crate::jobs::http::HttpJob;
+    use isok_data::JobId;
+    use serde::{Deserialize, Serialize};
 
     #[test]
     fn test_see_output_of_job() {

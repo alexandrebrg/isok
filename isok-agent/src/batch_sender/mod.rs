@@ -1,9 +1,11 @@
 use crate::config::{BrokerConfig, ResultSenderAdapter, SocketConfig};
 use enum_dispatch::enum_dispatch;
 use isok_data::broker_rpc::broker_client::BrokerClient;
-use isok_data::broker_rpc::{BrokerGrpcClient, CheckJobStatus, CheckResult, Tags};
+use isok_data::broker_rpc::check_result::Details;
+use isok_data::broker_rpc::{BrokerGrpcClient, CheckJobMetrics, CheckJobStatus, CheckResult, Tags};
 use isok_data::JobId;
 use prost::Message;
+use std::time::Duration;
 use tokio::io::AsyncWriteExt;
 use tokio::net::UnixStream;
 use tokio::sync::mpsc::UnboundedReceiver;
@@ -14,6 +16,8 @@ pub struct JobResult {
     pub id: JobId,
     pub run_at: Instant,
     pub status: CheckJobStatus,
+    pub latency: Option<Duration>,
+    pub details: Option<Details>,
 }
 
 impl JobResult {
@@ -22,11 +26,17 @@ impl JobResult {
             id,
             run_at: Instant::now(),
             status: CheckJobStatus::Unknown,
+            details: None,
+            latency: None,
         }
     }
 
     pub(crate) fn set_status(&mut self, status: CheckJobStatus) {
         self.status = status;
+    }
+
+    pub(crate) fn set_latency(&mut self, latency: Duration) {
+        self.latency = Some(latency);
     }
 }
 
@@ -118,9 +128,11 @@ impl BatchSenderOutput for SocketBatchSender {
                 id_ulid: job_result.id.clone().to_string(),
                 run_at: None,
                 status: job_result.status.into(),
-                metrics: Default::default(),
+                metrics: Some(CheckJobMetrics {
+                    latency: job_result.latency.map(|d| d.as_millis() as u64),
+                }),
                 tags: None,
-                details: Default::default(),
+                details: job_result.details,
             }],
         };
         let mut buffer = Vec::new();
@@ -147,7 +159,10 @@ impl BatchSenderOutput for SocketBatchSender {
     }
 
     async fn health_check(&mut self) -> Result<(), BatchSenderError> {
-        self.stream.writable().await.map_err(|e| BatchSenderError::WriteSocketError(e.to_string()))
+        self.stream
+            .writable()
+            .await
+            .map_err(|e| BatchSenderError::WriteSocketError(e.to_string()))
     }
 }
 

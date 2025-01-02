@@ -44,8 +44,7 @@ enum CheckJobStatus {
 }
 
 message CheckJobMetrics {
-  bool timeout = 1;
-  optional uint64 latency = 2;
+  optional uint64 latency = 1;
 }
 
 message JobDetailsTcp {}

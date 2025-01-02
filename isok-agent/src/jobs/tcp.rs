@@ -1,10 +1,11 @@
 use crate::batch_sender::JobResult;
 use crate::jobs::{Execute, JobError};
+use async_trait::async_trait;
 use isok_data::broker_rpc::CheckJobStatus;
 use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
 use std::str::FromStr;
-use async_trait::async_trait;
+use std::time::Instant;
 use tokio::net::TcpStream;
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
@@ -27,9 +28,12 @@ impl Execute for TcpJob {
     async fn execute(&self, msg: &mut JobResult) -> Result<(), JobError> {
         let addr = SocketAddr::from_str(&self.endpoint);
         if let Ok(addr) = addr {
+            let start_time = Instant::now();
             match TcpStream::connect(addr).await {
                 Ok(_) => {
+                    let latency = start_time.elapsed();
                     msg.set_status(CheckJobStatus::Reachable);
+                    msg.set_latency(latency);
                 }
                 Err(_) => {
                     msg.set_status(CheckJobStatus::Unreachable);
@@ -44,11 +48,11 @@ impl Execute for TcpJob {
 
 #[cfg(test)]
 mod tests {
+    use crate::batch_sender::JobResult;
     use crate::jobs::tcp::TcpJob;
     use crate::jobs::Execute;
     use isok_data::broker_rpc::CheckJobStatus;
     use isok_data::JobId;
-    use crate::batch_sender::JobResult;
 
     #[tokio::test]
     async fn test_tcp_job() {
