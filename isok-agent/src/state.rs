@@ -1,4 +1,4 @@
-use crate::jobs::{Execute, Job};
+use crate::jobs::Job;
 use std::ops::Deref;
 use std::time::Duration;
 use tokio::time::Instant;

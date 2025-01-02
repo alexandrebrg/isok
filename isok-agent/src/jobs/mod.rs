@@ -4,6 +4,8 @@ use crate::jobs::tcp::TcpJob;
 use isok_data::JobId;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
+use async_trait::async_trait;
+use enum_dispatch::enum_dispatch;
 use tokio::sync::mpsc::UnboundedSender;
 
 pub mod http;
@@ -11,11 +13,73 @@ pub mod tcp;
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
 #[serde(tag = "type")]
-pub enum Job {
+#[enum_dispatch(Execute)]
+pub enum JobInnerConfig {
     #[serde(rename = "tcp")]
     Tcp(TcpJob),
     #[serde(rename = "http")]
     Http(HttpJob),
+}
+
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
+pub struct Job {
+    #[serde(default = "generate_id")]
+    id: JobId,
+    #[serde(deserialize_with = "deserialize_duration")]
+    interval: Duration,
+    #[serde(flatten)]
+    inner: JobInnerConfig,
+    pretty_name: String,
+}
+
+fn deserialize_duration<'de, D>(deserializer: D) -> Result<Duration, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let s = u64::deserialize(deserializer)?;
+    Ok(Duration::from_secs(s))
+}
+
+fn generate_id() -> JobId {
+    tracing::warn!("One of the job doesn't have any ID, generating one");
+    JobId::generate()
+}
+
+impl Job {
+    pub fn new(interval: Duration, job_config: JobInnerConfig, pretty_name: String) -> Self {
+        Self {
+            id: JobId::generate(),
+            interval,
+            inner: job_config,
+            pretty_name,
+        }
+    }
+
+    pub fn id(&self) -> JobId {
+        self.id.clone()
+    }
+
+    pub(crate) fn interval(&self) -> Duration {
+        self.interval
+    }
+
+    pub(crate) fn pretty_name(&self) -> String {
+        self.pretty_name.clone()
+    }
+
+    #[tracing::instrument(skip_all, fields(self.id, self.pretty_name))]
+    pub(crate) async fn execute(&self, tx: UnboundedSender<JobResult>) -> Result<(), JobError> {
+        let mut job_result = JobResult::new(self.id());
+        match &self.inner {
+            JobInnerConfig::Tcp(job) => job.execute(&mut job_result).await,
+            JobInnerConfig::Http(job) => job.execute(&mut job_result).await,
+        }?;
+
+        if let Err(e) = tx.send(job_result) {
+            tracing::error!("Job failed to properly send its result to channel {}", e);
+        }
+        Ok(())
+    }
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -26,52 +90,32 @@ pub enum JobError {
     HttpError(#[from] reqwest::Error),
 }
 
-#[async_trait::async_trait]
-impl Execute for Job {
-    async fn execute(&self, tx: UnboundedSender<JobResult>) -> Result<(), JobError> {
-        match self {
-            Job::Tcp(job) => job.execute(tx).await,
-            Job::Http(job) => job.execute(tx).await,
-        }
-    }
-
-    fn pretty_name(&self) -> String {
-        match self {
-            Job::Tcp(job) => job.pretty_name(),
-            Job::Http(job) => job.pretty_name(),
-        }
-    }
-
-    fn id(&self) -> JobId {
-        match self {
-            Job::Tcp(job) => job.id(),
-            Job::Http(job) => job.id(),
-        }
-    }
-
-    fn interval(&self) -> Duration {
-        match self {
-            Job::Tcp(job) => job.interval(),
-            Job::Http(job) => job.interval(),
-        }
-    }
-}
-
-#[async_trait::async_trait]
+#[async_trait]
+#[enum_dispatch]
 pub trait Execute {
-    async fn execute(&self, tx: UnboundedSender<JobResult>) -> Result<(), JobError>;
-    fn pretty_name(&self) -> String;
-    fn id(&self) -> JobId;
-    fn interval(&self) -> Duration;
+    async fn execute(&self, job_result: &mut JobResult) -> Result<(), JobError>;
 }
 
 #[cfg(test)]
 mod tests {
-    
-    
-    use crate::jobs::{Execute, Job};
+    use std::time::Duration;
+    use crate::jobs::{Job, JobInnerConfig};
     
     use serde::{Deserialize, Serialize};
+    use isok_data::JobId;
+    use crate::jobs::http::HttpJob;
+
+    #[test]
+    fn test_see_output_of_job() {
+        let job = Job {
+            id: JobId::generate(),
+            interval: Duration::from_secs(10),
+            inner: JobInnerConfig::Http(HttpJob::new("https://google.com".to_string())),
+            pretty_name: "google".to_string(),
+        };
+        let str = serde_yaml::to_string(&job).unwrap();
+        println!("{}", str);
+    }
 
     #[derive(Debug, Deserialize, Serialize)]
     struct DummyRootJob {
@@ -90,12 +134,9 @@ mod tests {
                 Authorization: "Bearer..."
             "#;
         let root: DummyRootJob = serde_yaml::from_str(config).unwrap();
-        match &root.jobs[0] {
-            Job::Http(job) => {
-                assert_eq!(job.id().to_string().len(), 26);
-            }
-            _ => panic!("Expected to be able to deserialize job"),
-        }
+        let job = &root.jobs[0];
+
+        assert_eq!(job.id.to_string().len(), 26);
     }
 
     #[test]
@@ -111,11 +152,6 @@ mod tests {
                 Authorization: "Bearer..."
             "#;
         let root: DummyRootJob = serde_yaml::from_str(config).unwrap();
-        match &root.jobs[0] {
-            Job::Http(job) => {
-                assert_eq!(job.id().to_string(), "01ARZ3NDEKTSV4RRWETS2EGZ5M");
-            }
-            _ => panic!("Expected to be able to deserialize job"),
-        }
+        assert_eq!(&root.jobs[0].id.to_string(), "01ARZ3NDEKTSV4RRWETS2EGZ5M");
     }
 }

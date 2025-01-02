@@ -1,12 +1,13 @@
 use isok_agent::config::{Config as AgentConfig, ConfigCheckAdapter, ResultSenderAdapter};
 use isok_agent::jobs::http::HttpJob;
 use isok_agent::jobs::tcp::TcpJob;
-use isok_agent::jobs::{Execute, Job};
+use isok_agent::jobs::{Job, JobInnerConfig};
 use isok_data::broker_rpc::CheckBatchRequest;
 use pretty_assertions::assert_eq;
 use prost::Message;
 use std::path::PathBuf;
 use std::sync::atomic::AtomicUsize;
+use std::time::Duration;
 use tokio::io::AsyncReadExt;
 use tokio::net::UnixListener;
 use tokio::sync::mpsc::UnboundedReceiver;
@@ -96,11 +97,9 @@ impl AgentTestingRunner {
 
 #[tokio::test]
 async fn test_agent_feedback_ok_http() {
-    let check = Job::Http(HttpJob::new("https://google.com".to_string()).with_interval(10));
-    let expected_id = match &check {
-        Job::Http(job) => job.id().to_string(),
-        Job::Tcp(job) => job.id().to_string(),
-    };
+    let http_config = JobInnerConfig::Http(HttpJob::new("https://google.com".to_string()));
+    let check = Job::new(Duration::from_secs(10), http_config, "google".to_string());
+    let expected_id = check.id().to_string();
 
     let socket_path = tempfile::NamedTempFile::new().unwrap().path().to_path_buf();
     let (mut rx, _) =
@@ -128,7 +127,8 @@ async fn test_agent_feedback_ok_http() {
 async fn test_agent_feedback_ok_tcp() {
     let port = NEXT_PORT.fetch_add(1, std::sync::atomic::Ordering::SeqCst) as u16;
     let (_, _) = AgentTestingRunner::create_tcp_socket_listener::<CheckBatchRequest>(port);
-    let check = Job::Tcp(TcpJob::new(format!("127.0.0.1:{}", port)).with_interval(10));
+    let tcp_config = JobInnerConfig::Tcp(TcpJob::new(format!("127.0.0.1:{}", port)));
+    let check = Job::new(Duration::from_secs(10), tcp_config, "tcp".to_string());
 
     let socket_path = tempfile::NamedTempFile::new().unwrap().path().to_path_buf();
     let (mut rx, _) =

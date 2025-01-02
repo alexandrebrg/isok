@@ -1,6 +1,6 @@
 use crate::batch_sender::JobResult;
 use crate::errors::Result;
-use crate::jobs::{Execute, Job};
+use crate::jobs::Job;
 use crate::state::JobState;
 use dashmap::DashMap;
 use figment::providers::{Format, Yaml};

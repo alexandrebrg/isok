@@ -1183,7 +1183,6 @@ dependencies = [
  "dashmap",
  "enum_dispatch",
  "figment",
- "futures",
  "isok-data",
  "pretty_assertions",
  "prost",
