@@ -1,6 +1,7 @@
 mod api;
 mod message_broker;
 
+use crate::api::ApiError;
 use crate::message_broker::{KafkaMessageBroker, MessageBroker, MessageBrokerError};
 use figment::providers::{Format, Yaml};
 use figment::Figment;
@@ -14,7 +15,8 @@ pub async fn run(config: Config) -> Result<(), Error> {
 
     api::BrokerGrpcService::new(MessageBroker::Kafka(message_broker))
         .run_on(config.api.listen_address)
-        .await?;
+        .await
+        .map_err(Error::UnableToStartApiServer)?;
     Ok(())
 }
 
@@ -41,6 +43,8 @@ pub enum Error {
     UnableToLoadConfigFile(#[from] figment::Error),
     #[error("Unable to create message broker: {0}")]
     UnableToCreateMessageBroker(#[from] MessageBrokerError),
+    #[error("Unable to start API server")]
+    UnableToStartApiServer(#[from] ApiError),
 }
 
 impl Config {

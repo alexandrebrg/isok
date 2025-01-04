@@ -28,7 +28,7 @@ check_config_adapter:
       headers:
         Authorization: "Bearer..."
     - type: "http"
-      id: "01ARZ3NDEKTSV4RRWETS2KGZ5M"
+      id: "02ARZ3NDEKTSV4RRWETS2KGZ5M"
       pretty_name: "5s failing endpoint"
       endpoint: "https://my_endpoint.com/api/v1/healthy?system_only=true"
       interval: 5
@@ -36,7 +36,7 @@ check_config_adapter:
         Authorization: "Bearer..."
 
     - type: "tcp"
-      id: "01ARZ3NDEKTSV4RRWETS2EGE5M"
+      id: "03ARZ3NDEKTSV4RRWETS2EGE5M"
       pretty_name: "10s redis tcp check"
       endpoint: "my_tcp_endpoint:9123"
       secured: false

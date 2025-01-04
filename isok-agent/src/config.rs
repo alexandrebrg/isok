@@ -69,8 +69,8 @@ pub struct BrokerConfig {
     pub agent_id: String,
     pub zone: String,
     pub region: String,
-    pub batch: usize,
-    pub batch_interval: usize,
+    pub batch: u64,
+    pub batch_interval: u64,
 }
 
 #[derive(Debug, Deserialize, PartialEq)]

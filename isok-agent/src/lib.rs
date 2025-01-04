@@ -14,16 +14,9 @@ pub async fn run(config: Config) -> Result<()> {
     let registry = config.get_jobs_registry()?;
 
     let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
-    let mut batch_sender = match BatchSender::new(config.result_sender_adapter, rx).await {
-        Ok(batch_sender) => batch_sender,
-        Err(e) => {
-            tracing::error!(
-                "Unable to create batch sender, check your configuration. Error: {:?}",
-                e
-            );
-            return Err(Error::UnableToCreateBatchSender(e));
-        }
-    };
+    let mut batch_sender = BatchSender::new(config.result_sender_adapter, rx)
+        .await
+        .map_err(|e| Error::UnableToCreateBatchSender(e))?;
     join!(registry.execute(tx), batch_sender.run());
 
     Ok(())

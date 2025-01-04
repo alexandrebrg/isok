@@ -1,4 +1,5 @@
 use clap::Parser;
+use eyre::Context;
 use isok_agent::config::Config;
 use isok_agent::run;
 use serde::{Deserialize, Serialize};
@@ -39,7 +40,7 @@ impl CliArgs {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Error> {
+async fn main() -> Result<(), eyre::Report> {
     tracing_subscriber::registry()
         .with(fmt::layer())
         .with(
@@ -65,8 +66,8 @@ async fn main() -> Result<(), Error> {
         }
     }
     let config = match args.config {
-        Some(path) => Config::from_config_file(path)?,
+        Some(path) => Config::from_config_file(path).context("Unable to load config file")?,
         None => Config::default(),
     };
-    run(config).await.map_err(Error::UnableToRunAgent)
+    run(config).await.context("The agent failed to run")
 }
