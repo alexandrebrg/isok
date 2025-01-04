@@ -11,7 +11,8 @@ tokio = { version = "1.42.0", features = ["rt-multi-thread", "macros", "sync", "
 serde = { version = "1.0.216", features = ["derive"] }
 figment = { version = "0.10.19", features = ["yaml"] }
 serde_yaml = "0.9.33"
-thiserror = "2.0.7"
+thiserror = "2.0.9"
+eyre = "0.6.12"
 clap = { version = "^4.5", features = ["derive", "env"] }
 tracing = { version = "^0.1" }
 tracing-subscriber = { version = "^0.3", features = ["env-filter"] }

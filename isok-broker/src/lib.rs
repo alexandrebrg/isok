@@ -10,18 +10,11 @@ use std::net::{Ipv4Addr, SocketAddr};
 use std::path::PathBuf;
 
 pub async fn run(config: Config) -> Result<(), Error> {
-    let message_broker = KafkaMessageBroker::try_new(config.kafka)
-        .inspect_err(|e| tracing::error!("Unable to create message broker: {:?}", e))?;
+    let message_broker = KafkaMessageBroker::try_new(config.kafka)?;
 
-    match api::BrokerGrpcService::new(MessageBroker::Kafka(message_broker))
+    api::BrokerGrpcService::new(MessageBroker::Kafka(message_broker))
         .run_on(config.api.listen_address)
-        .await
-    {
-        Ok(_) => {}
-        Err(e) => {
-            tracing::error!("Unable to start API server: {:?}", e);
-        }
-    }
+        .await?;
     Ok(())
 }
 
