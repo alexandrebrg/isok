@@ -3,7 +3,7 @@ name = "integration-tests"
 version = "0.1.0"
 edition = "2021"
 
-[dev-dependencies]
+[dependencies]
 isok-agent = { path = "../isok-agent" }
 isok-broker = { path = "../isok-broker" }
 isok-data = { path = "../isok-data" }
@@ -19,3 +19,5 @@ tracing = { version = "0.1" }
 tempfile = "3.3.0"
 prost = "0.13.4"
 pretty_assertions = "1.4.0"
+ulid = "1.1.3"
+once_cell = "1.20.2"
