@@ -1,7 +1,7 @@
 use crate::config::KafkaConfig;
 use isok_data::broker_rpc::CheckResult;
 use prost::Message;
-use rdkafka::producer::{FutureProducer, FutureRecord, Producer};
+use rdkafka::producer::{FutureProducer, FutureRecord};
 use rdkafka::ClientConfig;
 use std::time::Duration;
 
