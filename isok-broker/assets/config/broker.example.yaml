@@ -2,7 +2,6 @@ kafka:
   topic: "isok.agent.results"
   # Kafka producer configuration, see https://github.com/confluentinc/librdkafka/blob/master/CONFIGURATION.md
   properties:
-    group.id: "isok-broker"
     bootstrap.servers: "localhost:9092"
 
 api:
