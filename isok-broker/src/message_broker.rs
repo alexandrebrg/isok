@@ -1,7 +1,7 @@
-use crate::KafkaConfig;
+use crate::config::KafkaConfig;
 use isok_data::broker_rpc::CheckResult;
 use prost::Message;
-use rdkafka::producer::{FutureProducer, FutureRecord};
+use rdkafka::producer::{FutureProducer, FutureRecord, Producer};
 use rdkafka::ClientConfig;
 use std::time::Duration;
 
@@ -70,7 +70,6 @@ impl TryFrom<KafkaConfig> for FutureProducer {
 
     fn try_from(value: KafkaConfig) -> Result<Self, Self::Error> {
         let mut client = ClientConfig::new();
-        client.set("message.timeout.ms", "5000");
 
         for (key, value) in value.properties {
             client.set(key, value);
@@ -85,6 +84,7 @@ impl TryFrom<KafkaConfig> for FutureProducer {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::config::KafkaConfig;
     use isok_data::broker_rpc::CheckJobStatus;
     use prost::Message;
     use rdkafka::consumer::{Consumer, StreamConsumer};

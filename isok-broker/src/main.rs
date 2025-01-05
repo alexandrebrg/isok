@@ -1,6 +1,6 @@
 use clap::Parser;
 use eyre::Context;
-use isok_broker::{run, Config};
+use isok_broker::{config::Config, run};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use tracing::level_filters::LevelFilter;
