@@ -3,7 +3,7 @@ use isok_data::broker_rpc::broker_client::BrokerClient;
 use isok_data::broker_rpc::{CheckBatchRequest, CheckResult};
 use once_cell::sync::Lazy;
 use prost::Message;
-use rdkafka::{Message as KafkaMessage};
+use rdkafka::Message as KafkaMessage;
 
 #[tokio::test]
 async fn test_kafka_message_integrity() {
@@ -48,6 +48,9 @@ async fn test_kafka_message_integrity() {
     let msg = consumer.recv().await.expect("Expected message");
 
     let result = CheckResult::decode(msg.payload().unwrap()).expect("Expected to decode message");
-    assert_eq!(result.status, isok_data::broker_rpc::CheckJobStatus::Reachable as i32);
+    assert_eq!(
+        result.status,
+        isok_data::broker_rpc::CheckJobStatus::Reachable as i32
+    );
     assert_eq!(result.id_ulid, "test");
 }

@@ -1,3 +1,4 @@
 [workspace]
 resolver = "2"
 members = [ "integration-tests","isok-agent", "isok-broker", "isok-data"]
+exclude = ["examples"]
