@@ -1,4 +1,10 @@
 [workspace]
 resolver = "2"
-members = [ "integration-tests","isok-agent", "isok-broker", "isok-data"]
+members = [
+    "integration-tests",
+    "isok-agent",
+    "isok-broker",
+    "isok-data",
+    "isok-cli",
+]
 exclude = ["examples"]
