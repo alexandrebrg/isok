@@ -69,13 +69,7 @@ impl TryFrom<KafkaConfig> for FutureProducer {
     type Error = MessageBrokerError;
 
     fn try_from(value: KafkaConfig) -> Result<Self, Self::Error> {
-        let mut client = ClientConfig::new();
-
-        for (key, value) in value.properties {
-            client.set(key, value);
-        }
-
-        client
+        ClientConfig::from_iter(value.properties)
             .create()
             .map_err(|e| MessageBrokerError::UnableToCreateProducer(e))
     }
