@@ -4,8 +4,6 @@ use std::io;
 
 mod private_key;
 
-mod authority_file;
-
 mod new_agent;
 use self::new_agent::NewAgentCommand;
 
