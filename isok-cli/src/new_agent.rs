@@ -27,7 +27,7 @@ fn parse_service(s: &str) -> io::Result<Box<str>> {
 #[derive(Debug, Clone, clap::Parser)]
 pub struct NewAgentCommand {
     /// Private key of the broker, used to sign the token.
-    #[clap(long, value_name = "KEY",  value_parser = private_key::parse,)]
+    #[clap(long, short, value_name = "KEY",  value_parser = private_key::parse,)]
     pub private_key: PrivateKey,
 
     /// Name of the service covered by this agent.
