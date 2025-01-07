@@ -26,7 +26,7 @@ fn parse_service(s: &str) -> io::Result<Box<str>> {
 /// Generate a biscuit token for a new agent.
 #[derive(Debug, Clone, clap::Parser)]
 pub struct NewAgentCommand {
-    /// Private of the broker, used to sign the token.
+    /// Private key of the broker, used to sign the token.
     #[clap(long, value_name = "KEY",  value_parser = private_key::parse,)]
     pub private_key: PrivateKey,
 

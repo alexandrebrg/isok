@@ -10,24 +10,20 @@ pub struct NewBrokerCommand {
     /// Generate the keypair from a private key.
     ///
     /// Value can be an hex-encoded private key or a path to a file (use `-` to read it from stdin).
-    #[clap(long, value_name = "KEY", value_parser = private_key::parse)]
+    #[clap(long, short, value_name = "KEY", value_parser = private_key::parse)]
     pub private_key: Option<PrivateKey>,
 
     /// Only output the public part of the key pair.
-    #[clap(long, conflicts_with = "only_private_key")]
+    #[clap(long, group = "output")]
     pub only_public_key: bool,
 
-    /// Output the public key raw bytes directly, with no hex encoding.
-    #[clap(long, requires = "only_public_key")]
-    pub raw_public_key_output: bool,
-
     /// Only output the public part of the key pair.
-    #[clap(long, conflicts_with = "only_public_key")]
+    #[clap(long, group = "output")]
     pub only_private_key: bool,
 
-    /// Output the private key raw bytes directly, with no hex encoding.
-    #[clap(long, requires = "only_private_key")]
-    pub raw_private_key_output: bool,
+    /// Output the public key raw bytes directly, with no hex encoding.
+    #[clap(long, requires = "output")]
+    pub raw: bool,
 }
 
 impl NewBrokerCommand {
@@ -42,14 +38,14 @@ impl NewBrokerCommand {
 
         if self.only_public_key {
             let public_key = key_pair.public();
-            if self.raw_public_key_output {
+            if self.raw {
                 w.write_all(&public_key.to_bytes())
             } else {
                 w.write_all(public_key.to_bytes_hex().as_bytes())
             }
         } else if self.only_private_key {
             let private_key = key_pair.private();
-            if self.raw_private_key_output {
+            if self.raw {
                 w.write_all(&private_key.to_bytes())
             } else {
                 w.write_all(private_key.to_bytes_hex().as_bytes())

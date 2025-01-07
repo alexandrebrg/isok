@@ -51,12 +51,19 @@ impl Command {
     }
 }
 
-#[test]
-fn verify_cli() {
-    use clap::CommandFactory;
-    Cli::command().debug_assert();
+fn main() -> color_eyre::Result<()> {
+    Ok(Cli::from_env().run()?)
 }
 
-fn main() -> io::Result<()> {
-    Cli::from_env().run()
+#[cfg(test)]
+mod tests {
+
+    #[test]
+    fn verify_cli() {
+        use clap::CommandFactory;
+
+        use super::Cli;
+
+        Cli::command().debug_assert();
+    }
 }
